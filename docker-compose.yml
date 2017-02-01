@@ -9,8 +9,6 @@ services:
         volumes:
             - "./www:/var/www/project/"
         working_dir: "/var/www/project/"
-        networks:
-            - code-network
     php:
         build: ./docker/php
         working_dir: "/var/www/project/"
@@ -20,13 +18,9 @@ services:
             - "./www:/var/www/project/"
         env_file:
             - ./blackfire_client.env
-        networks:
-            - code-network
         restart: always
     blackfire:
         image: blackfire/blackfire
-        networks:
-            - code-network
         env_file:
             - ./blackfire_server.env
     mariadb:
@@ -38,8 +32,6 @@ services:
             - "3306:3306"
         environment:
             - "MYSQL_ROOT_PASSWORD=r00tSql"
-        networks:
-            - code-network
     elasticsearch_master:
         build: ./docker/elasticsearch
         command: "elasticsearch -Des.cluster.name=mycluster -Des.node.master=true -Des.node.data=false"
@@ -47,36 +39,25 @@ services:
             - ES_HEAP_SIZE=512m
         ports:
             - "9200:9200"
-        networks:
-            - code-network
     elasticsearch:
         image: elasticsearch:latest
         command: "elasticsearch -Des.cluster.name=mycluster -Des.discovery.zen.ping.unicast.hosts=elasticsearch_master"
         environment:
             - ES_HEAP_SIZE=2g
-        networks:
-            - code-network
     rabbitmq_master:
         image: bijukunjummen/rabbitmq-server
         hostname: rabbitmq_master
         ports:
             - "15672:15672"
-        networks:
-            - code-network
     rabbitmq:
         image: bijukunjummen/rabbitmq-server
         environment:
             - CLUSTERED=true
             - CLUSTER_WITH=rabbitmq_master
-        networks:
-            - code-network
     data:
         build: ./docker/data
         volumes:
             - /var/lib/mysql
             - /var/www/project
-        networks:
-            - code-network
-networks:
-    code-network:
-        driver: bridge
+
+
