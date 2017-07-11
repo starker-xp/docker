@@ -1,19 +1,15 @@
-version: '2'
+version: '3'
 services:
     web:
         build: ./docker/nginx
         ports:
             - "8080:80"
-        volumes_from:
-            - data
         volumes:
             - "./www:/var/www/project/"
         working_dir: "/var/www/project/"
     php:
         build: ./docker/php
         working_dir: "/var/www/project/"
-        volumes_from:
-            - data
         volumes:
             - "./www:/var/www/project/"
         env_file:
@@ -26,24 +22,33 @@ services:
     mariadb:
         image: mariadb:latest
         restart: always
-        volumes_from:
-            - data
+        volumes:
+            - "db-data:/var/lib/mysql"
         ports:
             - "3306:3306"
         environment:
             - "MYSQL_ROOT_PASSWORD=r00tSql"
+    elasticsearch_head:
+        build: ./docker/elasticsearch_head
+        ports:
+            - "9100:9100"
     elasticsearch_master:
         build: ./docker/elasticsearch
-        command: "elasticsearch -Des.cluster.name=mycluster -Des.node.master=true -Des.node.data=false"
-        environment:
-            - ES_HEAP_SIZE=512m
         ports:
             - "9200:9200"
-    elasticsearch:
-        image: elasticsearch:latest
-        command: "elasticsearch -Des.cluster.name=mycluster -Des.discovery.zen.ping.unicast.hosts=elasticsearch_master"
         environment:
-            - ES_HEAP_SIZE=2g
+            - cluster.name=mycluster
+            - node.master=true
+            - bootstrap.memory_lock=true
+            - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    elasticsearch_slave:
+        image: elasticsearch:latest
+        environment:
+            - cluster.name=mycluster
+            - bootstrap.memory_lock=true
+            - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+            - UNICAST_HOSTS=elasticsearch_master
+            - "discovery.zen.ping.unicast.hosts=elasticsearch_master"
     rabbitmq_master:
         image: bijukunjummen/rabbitmq-server
         hostname: rabbitmq_master
@@ -54,10 +59,7 @@ services:
         environment:
             - CLUSTERED=true
             - CLUSTER_WITH=rabbitmq_master
-    data:
-        build: ./docker/data
-        volumes:
-            - /var/lib/mysql
-            - /var/www/project
 
+volumes:
+    db-data:
 

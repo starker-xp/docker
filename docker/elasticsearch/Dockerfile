@@ -1,3 +1,5 @@
 FROM elasticsearch:latest
 
-RUN /usr/share/elasticsearch/bin/plugin install mobz/elasticsearch-head
+RUN echo 'http.cors.enabled: true' >> /usr/share/elasticsearch/config/elasticsearch.yml
+RUN echo 'http.cors.allow-origin: "*"' >> /usr/share/elasticsearch/config/elasticsearch.yml
+RUN echo 'cluster.name: mycluster' >> /usr/share/elasticsearch/config/elasticsearch.yml
